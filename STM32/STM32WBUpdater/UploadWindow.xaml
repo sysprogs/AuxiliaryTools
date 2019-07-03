@@ -143,7 +143,11 @@
             </StackPanel>
         </Button>
 
-        <TextBlock Text="{Binding VersionText}" HorizontalAlignment="Right" Margin="5 2"/>
+        <Grid>
+            <Button Style="{StaticResource HyperlinkButton}" HorizontalAlignment="Left" Content="View ST license for tools and binaries"
+                    Click="ShowLicense_Click" Margin="5 0 0 0"/>
+            <TextBlock Text="{Binding VersionText}" HorizontalAlignment="Right" Margin="5 2"/>
+        </Grid>
 
     </StackPanel>
 </Window>

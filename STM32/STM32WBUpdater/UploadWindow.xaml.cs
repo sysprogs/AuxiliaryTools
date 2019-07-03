@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -123,13 +124,25 @@ namespace STM32WBUpdater
             InitializeComponent();
             Loaded += UploadWindow_Loaded;
 
-            _DataDirectory = "data";
-
             var ser = new XmlSerializer(typeof(STM32WBUpdaterConfiguration));
-            using (var fs = File.OpenRead(System.IO.Path.Combine(_DataDirectory, "STM32WBUpdater.xml")))
+
+            using (var fs = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("STM32WBUpdater.STM32WBUpdater.xml"))
                 _Configuration = (STM32WBUpdaterConfiguration)ser.Deserialize(fs);
 
             DataContext = Controller = new ControllerImpl(_Configuration);
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            if (_DataDirectory != null)
+            {
+                try
+                {
+                    Directory.Delete(_DataDirectory, true);
+                }
+                catch { }
+            }
         }
 
         private void UploadWindow_Loaded(object sender, RoutedEventArgs e)
@@ -208,6 +221,38 @@ namespace STM32WBUpdater
             try
             {
                 Controller.Status = ControllerImpl.ControllerStatus.Running;
+
+                if (_DataDirectory == null)
+                {
+                    Controller.StatusText = "Extracting STM32Programmer tool...";
+                    var dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "STM32WBUpdater");
+                    if (Directory.Exists(dir))
+                    {
+                        var paragraph = new Paragraph();
+                        paragraph.Inlines.Add(new Run($"Deleting {dir}...\r\n") { Foreground = Brushes.DarkBlue });
+                        txtLog.Document.Blocks.Add(paragraph);
+
+                        Directory.Delete(dir, true);
+                    }
+
+                    Directory.CreateDirectory(dir);
+                    {
+                        var paragraph = new Paragraph();
+                        paragraph.Inlines.Add(new Run($"Unpacking to {dir}...\r\n") { Foreground = Brushes.DarkBlue });
+                        txtLog.Document.Blocks.Add(paragraph);
+                    }
+
+                    await Task.Run(() =>
+                    {
+                        using (var fs = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("STM32WBUpdater.data.zip"))
+                        {
+                            new ZipArchive(fs, ZipArchiveMode.Read).ExtractToDirectory(dir);
+                        }
+                    });
+
+                    _DataDirectory = dir;
+                }
+
                 var binary = Controller.SelectedBinary ?? throw new Exception("No binary selected");
 
                 string iface = "usb1";
@@ -260,6 +305,11 @@ namespace STM32WBUpdater
         private void ListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             Program_Click(sender, e);
+        }
+
+        private void ShowLicense_Click(object sender, RoutedEventArgs e)
+        {
+            Process.Start("http://www.st.com/SLA0044");
         }
     }
 }

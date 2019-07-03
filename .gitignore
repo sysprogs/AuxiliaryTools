@@ -1,3 +1,4 @@
 .vs
 bin
 obj
+/STM32/STM32WBUpdater/data.zip
