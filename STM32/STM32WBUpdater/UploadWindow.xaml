@@ -6,56 +6,136 @@
         xmlns:local="clr-namespace:STM32WBUpdater"
         mc:Ignorable="d"
         Title="Update Wireless Stack" Width="600" Icon="gear.ico"
-        SizeToContent="Height">
+        SizeToContent="Height" WindowStartupLocation="CenterScreen">
     <StackPanel>
         <TextBlock Text="Program/Update STM32WB Wireless Stack" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" Margin="0 0 0 10"/>
         <TextBlock Text="In order to use the wireless functionality of the STM32WB device, you need to program one of the wireless stacks into it using the bootloader interface. Please select a stack below and click 'Program' load the stack into your device:" 
                    Margin="5" TextWrapping="Wrap"/>
-        <ListBox ItemsSource="{Binding Path=Configuration.Stacks}" Margin="5" SelectedItem="{Binding SelectedBinary}">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <Grid Margin="0 5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
 
-                        <Image Width="32" Height="32" Grid.RowSpan="3" Source="pkg32.png" Margin="0 0 5 0" VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding FileName}" FontWeight="Bold" Grid.Column="1" Grid.Row="0"/>
-                        <TextBlock Text="{Binding Line1}" Opacity="0.75" Grid.Column="1" Grid.Row="1"/>
-                        <TextBlock Text="{Binding Line2}" Opacity="0.75" Grid.Column="1" Grid.Row="2">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Line2}" Value="{x:Null}">
-                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </Grid>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+        <Grid>
+            <ListBox ItemsSource="{Binding Path=Configuration.Stacks}" Margin="5" SelectedItem="{Binding SelectedBinary}"
+                     IsEnabled="{Binding IsReady}" MouseDoubleClick="ListBox_MouseDoubleClick">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0 5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-        <Button>
+                            <Image Width="32" Height="32" Grid.RowSpan="3" Source="icons\pkg32.png" Margin="0 0 5 0" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding FileName}" FontWeight="Bold" Grid.Column="1" Grid.Row="0"/>
+                            <TextBlock Text="{Binding Line1}" Opacity="0.75" Grid.Column="1" Grid.Row="1"/>
+                            <TextBlock Text="{Binding Line2}" Opacity="0.75" Grid.Column="1" Grid.Row="2">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Line2}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+
+                <ListBox.Style>
+                    <Style TargetType="ListBox">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ShowDetails}" Value="True">
+                                <Setter Property="Visibility" Value="Hidden"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListBox.Style>
+            </ListBox>
+
+            <RichTextBox IsReadOnly="True" IsReadOnlyCaretVisible="True" x:Name="txtLog" FontFamily="Courier New"
+                         MaxHeight="500" VerticalScrollBarVisibility="Visible">
+                <RichTextBox.Style>
+                    <Style TargetType="RichTextBox">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ShowDetails}" Value="False">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </RichTextBox.Style>
+            </RichTextBox>
+        </Grid>
+
+        <Grid Margin="5 2 0 2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Image Width="16" Height="16" Margin="0 0 5 0">
+                <Image.Style>
+                    <Style TargetType="Image">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Status}" Value="Running">
+                                <Setter Property="Source" Value="icons\blueright16.png"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Status}" Value="Failed">
+                                <Setter Property="Source" Value="icons\cancel.png"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Status}" Value="Succeeded">
+                                <Setter Property="Source" Value="icons\check16.png"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Image.Style>
+            </Image>
+            <TextBlock Text="{Binding StatusText}" Grid.Column="1" VerticalAlignment="Center"/>
+            <Expander Grid.Column="3" Margin="0 -3 -1 0" IsExpanded="{Binding ShowDetails}"/>
+            <ProgressBar Grid.Column="2" Margin="5" Width="100" IsIndeterminate="True">
+                <ProgressBar.Style>
+                    <Style TargetType="ProgressBar">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Status}" Value="Running">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ProgressBar.Style>
+            </ProgressBar>
+
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding StatusText}" Value="{x:Null}">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+        </Grid>
+
+        <Button Click="Program_Click">
             <Button.Style>
                 <Style TargetType="Button">
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding Path=SelectedBinary}" Value="{x:Null}">
                             <Setter Property="IsEnabled" Value="False"/>
                         </DataTrigger>
+                        <DataTrigger Binding="{Binding Path=IsReady}" Value="False">
+                            <Setter Property="IsEnabled" Value="False"/>
+                        </DataTrigger>
                     </Style.Triggers>
                 </Style>
             </Button.Style>
             <StackPanel Orientation="Horizontal">
-                <Image Width="32" Height="32" Source="112_DownArrowShort_Orange_24x24_72.png" Margin="0 0 5 0"/>
+                <Image Width="32" Height="32" Source="icons\down32.png" Margin="0 0 5 0"/>
                 <TextBlock Text="Program selected stack" FontSize="20" Margin="0 5" FontWeight="Bold"/>
             </StackPanel>
         </Button>

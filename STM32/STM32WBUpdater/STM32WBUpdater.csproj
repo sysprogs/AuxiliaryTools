@@ -112,10 +112,11 @@
     <Resource Include="gear.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="112_DownArrowShort_Orange_24x24_72.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="pkg32.png" />
+    <Resource Include="Icons\blueright16.png" />
+    <Resource Include="Icons\cancel.png" />
+    <Resource Include="Icons\check16.png" />
+    <Resource Include="Icons\down32.png" />
+    <Resource Include="Icons\pkg32.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

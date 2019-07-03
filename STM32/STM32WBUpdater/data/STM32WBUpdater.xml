@@ -8,6 +8,7 @@
 		<Version>v1.0.1</Version>
 		<BaseAddress>0x080EC000</BaseAddress>
 	</Bootloader>
+	<ExpectedBootloaderVersion>0x01000100</ExpectedBootloaderVersion>
 	<Stacks>
 		<ProgrammableBinary>
 			<Line1>Full BLE Stack 5.0 certified : Link Layer, HCI, L2CAP, ATT, SM, GAP and GATT database</Line1>

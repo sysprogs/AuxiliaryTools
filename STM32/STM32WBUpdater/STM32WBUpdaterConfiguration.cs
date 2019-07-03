@@ -35,6 +35,17 @@ namespace STM32WBUpdater
         public ProgrammableBinary Bootloader;
         public string ExpectedBootloaderVersion;
 
+        public ulong ParsedExpectedBootloaderVersion
+        {
+            get
+            {
+                if (ExpectedBootloaderVersion?.StartsWith("0x") != true)
+                    throw new Exception("Invalid base address: " + ExpectedBootloaderVersion);
+
+                return ulong.Parse(ExpectedBootloaderVersion.Substring(2), NumberStyles.AllowHexSpecifier);
+            }
+        }
+
         public ProgrammableBinary[] Stacks { get; set; }
     }
 }
