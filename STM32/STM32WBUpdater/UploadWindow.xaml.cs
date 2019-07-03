@@ -107,7 +107,7 @@ namespace STM32WBUpdater
 
             public event PropertyChangedEventHandler PropertyChanged;
 
-            public string VersionText => $"STM32WBUpdater {Configuration.Version}. Copyright (c) 2019, Sysprogs OU.";
+            public string VersionText => $"Wireless Stack Updater {Configuration.Version}. Copyright (c) 2019, Sysprogs OU.";
 
             public ControllerImpl(STM32WBUpdaterConfiguration cfg)
             {

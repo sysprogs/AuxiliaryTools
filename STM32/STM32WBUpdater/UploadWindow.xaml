@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:STM32WBUpdater"
         mc:Ignorable="d"
-        Title="Update Wireless Stack" Width="600" Icon="gear.ico"
+        Title="STM32WB Wireless Stack Updater" Width="600" Icon="gear.ico"
         SizeToContent="Height" WindowStartupLocation="CenterScreen">
     <StackPanel>
         <TextBlock Text="Program/Update STM32WB Wireless Stack" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" Margin="0 0 0 10"/>
