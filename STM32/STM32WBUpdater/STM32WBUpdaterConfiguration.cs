@@ -34,6 +34,7 @@ namespace STM32WBUpdater
 
         public ProgrammableBinary Bootloader;
         public string ExpectedBootloaderVersion;
+        public string Version;
 
         public ulong ParsedExpectedBootloaderVersion
         {

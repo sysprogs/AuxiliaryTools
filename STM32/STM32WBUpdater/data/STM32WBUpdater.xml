@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <STM32WBUpdaterConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
 	<SupportedDeviceIDRegex>USB\\VID_0483&amp;PID_DF11($|&amp;.*)</SupportedDeviceIDRegex>
+	<Version>1.0</Version>
 	<Bootloader>
 		<Line1>Firmware Upgrade Services Binary</Line1>
 		<Line2>Firmware Upgrade Services Binary</Line2>

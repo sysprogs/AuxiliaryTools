@@ -104,9 +104,9 @@ namespace STM32WBUpdater
                 }
             }
 
-            bool _IsReady = true;
-
             public event PropertyChangedEventHandler PropertyChanged;
+
+            public string VersionText => $"STM32WBUpdater {Configuration.Version}. Copyright (c) 2019, Sysprogs OU.";
 
             public ControllerImpl(STM32WBUpdaterConfiguration cfg)
             {
@@ -170,6 +170,7 @@ namespace STM32WBUpdater
                     _Dispatcher.BeginInvoke(new Action(() =>
                     {
                         paragraph.Inlines.Add(new Run(e.Data + "\r\n"));
+                        txtLog.ScrollToEnd();
                     }));
                 };
 
@@ -217,11 +218,23 @@ namespace STM32WBUpdater
                     throw new Exception("Failed to delete the previous firmware version");
 
                 uint fusVersionAddress = 0x20030030;
+                uint detectedFUSVersion = 0;
 
-                output = await RunProgrammerTool("Checking FUS binary version...", $"-c port={iface} -r32 0x{fusVersionAddress:x8} 1");
-                Regex rgValue = new Regex($"0x{fusVersionAddress:x8} *: *([0-9]{{8}})($| |:)");
-                var value = output.Select(l => rgValue.Match(l)).FirstOrDefault(m => m.Success)?.Groups[1].Value ?? throw new Exception("Failed to read existing FUS binary address");
-                uint detectedFUSVersion = uint.Parse(value, NumberStyles.AllowHexSpecifier, null);
+                for (int iter = 0; ; iter++)
+                {
+                    try
+                    {
+                        output = await RunProgrammerTool("Checking FUS binary version...", $"-c port={iface} -r32 0x{fusVersionAddress:x8} 1");
+                        Regex rgValue = new Regex($"0x{fusVersionAddress:x8} *: *([0-9]{{8}})($| |:)");
+                        var value = output.Select(l => rgValue.Match(l)).FirstOrDefault(m => m.Success)?.Groups[1].Value ?? throw new Exception("Failed to read existing FUS binary address");
+                        detectedFUSVersion = uint.Parse(value, NumberStyles.AllowHexSpecifier, null);
+                        break;
+                    }
+                    catch when (iter < 5)
+                    {
+                        continue;
+                    }
+                }
 
                 if (detectedFUSVersion > _Configuration.ParsedExpectedBootloaderVersion)
                     throw new Exception($"The bootloader in the device (0x{detectedFUSVersion:x8}) is newer than the bootloader shipped with this tool ({_Configuration.ExpectedBootloaderVersion}). Please update the tool.");
@@ -238,9 +251,9 @@ namespace STM32WBUpdater
             }
             catch (Exception ex)
             {
-                Controller.StatusText = "Stack update failed";
+                Controller.StatusText = "Stack update failed. Use the button on the right to view the details.";
                 Controller.Status = ControllerImpl.ControllerStatus.Failed;
-                MessageBox.Show(ex.Message, "STM32WBUpdater", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"{ex.Message}\r\nPlease try replugging the device and programming it again.", "STM32WBUpdater", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

@@ -29,7 +29,10 @@
                             </Grid.RowDefinitions>
 
                             <Image Width="32" Height="32" Grid.RowSpan="3" Source="icons\pkg32.png" Margin="0 0 5 0" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding FileName}" FontWeight="Bold" Grid.Column="1" Grid.Row="0"/>
+                            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="0">
+                                <TextBlock Text="{Binding FileName}" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding Version}" Margin="5 0 0 0" Opacity="0.75"/>
+                            </StackPanel>
                             <TextBlock Text="{Binding Line1}" Opacity="0.75" Grid.Column="1" Grid.Row="1"/>
                             <TextBlock Text="{Binding Line2}" Opacity="0.75" Grid.Column="1" Grid.Row="2">
                                 <TextBlock.Style>
@@ -139,6 +142,8 @@
                 <TextBlock Text="Program selected stack" FontSize="20" Margin="0 5" FontWeight="Bold"/>
             </StackPanel>
         </Button>
+
+        <TextBlock Text="{Binding VersionText}" HorizontalAlignment="Right" Margin="5 2"/>
 
     </StackPanel>
 </Window>

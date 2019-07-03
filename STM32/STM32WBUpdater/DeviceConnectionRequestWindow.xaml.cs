@@ -1,6 +1,7 @@
 ﻿using STM32WBUpdater.DeviceEnumeration;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -61,7 +62,7 @@ namespace STM32WBUpdater
 
         private void Help_Click(object sender, RoutedEventArgs e)
         {
-
+            Process.Start("https://visualgdb.com/tools/STM32WBUpdater/connecting");
         }
 
         private void Skip_Click(object sender, RoutedEventArgs e)
