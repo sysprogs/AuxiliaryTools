@@ -255,7 +255,7 @@ namespace STM32WBUpdater
                     _DataDirectory = dir;
                 }
 
-                await FixDriversAsync();
+                FixDriversIfNeeded();
 
                 var binary = Controller.SelectedBinary ?? throw new Exception("No binary selected");
 
@@ -307,30 +307,36 @@ namespace STM32WBUpdater
             }
         }
 
-        private async Task FixDriversAsync()
+        private void FixDriversIfNeeded()
         {
             var regex = new Regex(_Configuration.SupportedDeviceIDRegex);
 
-            using (var set = new DeviceInformationSet())
-            {
-                var paragraph = new Paragraph();
-                paragraph.Inlines.Add(new Run("Checking whether the driver needs updating...\r\n") { Foreground = Brushes.DarkBlue });
-                txtLog.Document.Blocks.Add(paragraph);
+            var paragraph = new Paragraph();
+            paragraph.Inlines.Add(new Run("Checking whether the driver needs updating...\r\n") { Foreground = Brushes.DarkBlue });
+            txtLog.Document.Blocks.Add(paragraph);
 
-                var devices = set.GetAllDevices().Where(d => regex.IsMatch(d.HardwareID)).ToArray();
-                if (devices.Length == 1)
+            for (int pass = 0; pass < 2; pass++)
+            {
+                using (var set = new DeviceInformationSet())
                 {
+                    var devices = set.GetAllDevices().Where(d => regex.IsMatch(d.HardwareID)).ToArray();
+                    if (devices.Length != 1)
+                        return;
+
                     var device = devices[0];
                     paragraph.Inlines.Add(new Run($"Found {device.DeviceID}...\r\n") { Foreground = Brushes.DarkBlue });
 
-                    if (device.UserFriendlyName != "STM32 Bootloader")
+                    if (device.UserFriendlyName == "STM32 Bootloader")
+                        return;
+
+                    Controller.StatusText = "Installing STM32 bootloader drivers...";
+
+                    paragraph.Inlines.Add(new Run($"Bootloader driver not installed for {device.UserFriendlyName}\r\n") { Foreground = Brushes.DarkBlue });
+
+                    var driver = set.GetCompatibleDrivers(device).FirstOrDefault(d => d.Description == "STM32 Bootloader");
+                    if (driver.Description == null)
                     {
-                        Controller.StatusText = "Installing STM32 bootloader drivers...";
-
-                        paragraph.Inlines.Add(new Run($"Bootloader driver not installed for {device.UserFriendlyName}\r\n") { Foreground = Brushes.DarkBlue });
-
-                        var driver = set.GetCompatibleDrivers(device).FirstOrDefault(d => d.Description == "STM32 Bootloader");
-                        if (driver.Description == null)
+                        if (pass == 0)
                         {
                             string driverDir = System.IO.Path.Combine(_DataDirectory, "Driver");
                             paragraph.Inlines.Add(new Run($"Copying drivers from {driverDir}...\r\n") { Foreground = Brushes.DarkBlue });
@@ -347,14 +353,14 @@ namespace STM32WBUpdater
                                 throw new LastWin32ErrorException("Failed to install the STM32 Bootloader driver");
                             }
 
-                            driver = set.GetCompatibleDrivers(device).FirstOrDefault(d => d.Description == "STM32 Bootloader");
-                            if (driver.Description == null)
-                                throw new Exception("STM32 Bootloader Driver Not Found");
+                            continue;
                         }
-
-                        paragraph.Inlines.Add(new Run($"Installing the STM32 bootloader driver...\r\n") { Foreground = Brushes.DarkBlue });
-                        set.InstallSpecificDriverForDevice(device, driver, IntPtr.Zero);
+                        else
+                            throw new Exception("STM32 Bootloader Driver Not Found");
                     }
+
+                    paragraph.Inlines.Add(new Run($"Installing the STM32 bootloader driver...\r\n") { Foreground = Brushes.DarkBlue });
+                    set.InstallSpecificDriverForDevice(device, driver, IntPtr.Zero);
                 }
             }
         }
