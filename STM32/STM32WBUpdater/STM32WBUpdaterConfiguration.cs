@@ -20,32 +20,48 @@ namespace STM32WBUpdater
             public string Version { get; set; }
             public string BaseAddress { get; set; }
 
-            public ulong ParsedBaseAddress
+            public ulong GetParsedBaseAddress(int index)
             {
-                get
-                {
-                    if (BaseAddress?.StartsWith("0x") != true)
-                        throw new Exception("Invalid base address: " + BaseAddress);
+                var addr = BaseAddress.Split('/')[index];
 
-                    return ulong.Parse(BaseAddress.Substring(2), NumberStyles.AllowHexSpecifier);
-                }
+                if (!addr.StartsWith("0x"))
+                    throw new Exception("Invalid base address: " + BaseAddress);
+
+                return ulong.Parse(addr.Substring(2), NumberStyles.AllowHexSpecifier);
+            }
+
+            internal bool IsCompatibleWithDevice(int index)
+            {
+                var addr = BaseAddress.Split('/')[index];
+                if (addr == "-")
+                    return false;
+                return true;
             }
         }
 
-        public ProgrammableBinary Bootloader;
-        public string ExpectedBootloaderVersion;
-        public string Version;
-
-        public ulong ParsedExpectedBootloaderVersion
+        public class ProgrammableBootloader : ProgrammableBinary
         {
-            get
-            {
-                if (ExpectedBootloaderVersion?.StartsWith("0x") != true)
-                    throw new Exception("Invalid base address: " + ExpectedBootloaderVersion);
+            public string TriggerVersions;
 
-                return ulong.Parse(ExpectedBootloaderVersion.Substring(2), NumberStyles.AllowHexSpecifier);
+            public bool ShouldProgram(ulong detectedVersion)
+            {
+                foreach(var ver in TriggerVersions.Split('/'))
+                {
+                    if (ver?.StartsWith("0x") != true)
+                        throw new Exception("Invalid base address: " + ver);
+
+                    var parsedVer = ulong.Parse(ver.Substring(2), NumberStyles.AllowHexSpecifier);
+                    if (parsedVer == detectedVersion)
+                        return true;
+                }
+
+                return false;
             }
         }
+
+        public ProgrammableBootloader[] Bootloaders;
+        public string Version;
+        public string DeviceTypes;
 
         public ProgrammableBinary[] Stacks { get; set; }
     }

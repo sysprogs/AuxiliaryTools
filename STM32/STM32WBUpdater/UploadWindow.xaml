@@ -12,8 +12,17 @@
         <TextBlock Text="In order to use the wireless functionality of the STM32WB device, you need to program one of the wireless stacks into it using the bootloader interface. Please select a stack below and click 'Program' load the stack into your device:" 
                    Margin="5" TextWrapping="Wrap"/>
 
+        <Grid Margin="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Label Content="Device Type:" VerticalAlignment="Center"/>
+            <ComboBox ItemsSource="{Binding DeviceTypes}" SelectedIndex="{Binding SelectedDeviceIndex}" Grid.Column="1" Margin="5" VerticalAlignment="Center"/>
+        </Grid>
+
         <Grid>
-            <ListBox ItemsSource="{Binding Path=Configuration.Stacks}" Margin="5" SelectedItem="{Binding SelectedBinary}"
+            <ListBox ItemsSource="{Binding Path=CompatibleStacks}" Margin="5" SelectedItem="{Binding SelectedBinary}"
                      IsEnabled="{Binding IsReady}" MouseDoubleClick="ListBox_MouseDoubleClick">
                 <ListBox.ItemTemplate>
                     <DataTemplate>

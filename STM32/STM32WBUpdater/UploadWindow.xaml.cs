@@ -109,7 +109,24 @@ namespace STM32WBUpdater
 
             public event PropertyChangedEventHandler PropertyChanged;
 
-            public string VersionText => $"Wireless Stack Updater {Configuration.Version}. Copyright (c) 2019, Sysprogs OU.";
+            public string[] DeviceTypes => Configuration.DeviceTypes.Split('/');
+
+            int _SelectedDeviceIndex = -1;
+            public int SelectedDeviceIndex
+            {
+                get => _SelectedDeviceIndex;
+                set
+                {
+                    _SelectedDeviceIndex = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedDeviceIndex)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CompatibleStacks)));
+                }
+            }
+
+            public STM32WBUpdaterConfiguration.ProgrammableBinary[] CompatibleStacks => Configuration.Stacks.Where(st => SelectedDeviceIndex < 0 || st.IsCompatibleWithDevice(SelectedDeviceIndex)).ToArray();
+
+
+            public string VersionText => $"Wireless Stack Updater {Configuration.Version}. Copyright (c) 2019-2020, Sysprogs OU.";
 
             public ControllerImpl(STM32WBUpdaterConfiguration cfg)
             {
@@ -213,7 +230,7 @@ namespace STM32WBUpdater
             if (!File.Exists(fullBinaryPath))
                 throw new Exception("Missing " + fullBinaryPath);
 
-            var output = await RunProgrammerTool(title, $"-c port={iface} -fwupgrade \"{System.IO.Path.GetFullPath(fullBinaryPath)}\" 0x{binary.ParsedBaseAddress:x8} firstinstall=" + (isFUS ? '0' : '1'));
+            var output = await RunProgrammerTool(title, $"-c port={iface} -fwupgrade \"{System.IO.Path.GetFullPath(fullBinaryPath)}\" 0x{binary.GetParsedBaseAddress(Controller.SelectedDeviceIndex):x8} firstinstall=" + (isFUS ? '0' : '1'));
             if (!OutputContains(output, successMarker))
                 throw new Exception("Failed to program the binary");
         }
@@ -222,6 +239,9 @@ namespace STM32WBUpdater
         {
             try
             {
+                if (Controller.SelectedDeviceIndex < 0)
+                    throw new Exception("Please select the device type. Binary programming addresses are different for different devices.");
+
                 Controller.Status = ControllerImpl.ControllerStatus.Running;
 
                 if (_DataDirectory == null)
@@ -255,6 +275,15 @@ namespace STM32WBUpdater
                     _DataDirectory = dir;
                 }
 
+#if DEBUG
+                foreach (var checkedStack in Controller.Configuration.Stacks)
+                {
+                    string fullBinaryPath = System.IO.Path.Combine(_DataDirectory, "stacks", checkedStack.FileName);
+                    if (!File.Exists(fullBinaryPath))
+                        throw new Exception("DEBUG CHECK: One of the binaries is missing: " + fullBinaryPath);
+                }
+#endif
+
                 FixDriversIfNeeded();
 
                 var binary = Controller.SelectedBinary ?? throw new Exception("No binary selected");
@@ -266,31 +295,40 @@ namespace STM32WBUpdater
                 if (!OutputContains(output, "Firmware delete finished"))
                     throw new Exception("Failed to delete the previous firmware version");
 
-                uint fusVersionAddress = 0x20030030;
-                uint detectedFUSVersion = 0;
+                const uint fusVersionAddress = 0x20030030;
 
-                for (int iter = 0; ; iter++)
-                {
-                    try
-                    {
-                        output = await RunProgrammerTool("Checking FUS binary version...", $"-c port={iface} -r32 0x{fusVersionAddress:x8} 1");
-                        Regex rgValue = new Regex($"0x{fusVersionAddress:x8} *: *([0-9]{{8}})($| |:)");
-                        var value = output.Select(l => rgValue.Match(l)).FirstOrDefault(m => m.Success)?.Groups[1].Value ?? throw new Exception("Failed to read existing FUS binary address");
-                        detectedFUSVersion = uint.Parse(value, NumberStyles.AllowHexSpecifier, null);
-                        break;
-                    }
-                    catch when (iter < 5)
-                    {
-                        await Task.Run(() => Thread.Sleep(2000));
-                        continue;
-                    }
-                }
+                uint oldFUSVersion = 0;
 
-                if (detectedFUSVersion > _Configuration.ParsedExpectedBootloaderVersion)
-                    throw new Exception($"The bootloader in the device (0x{detectedFUSVersion:x8}) is newer than the bootloader shipped with this tool ({_Configuration.ExpectedBootloaderVersion}). Please update the tool.");
-                else if (detectedFUSVersion < _Configuration.ParsedExpectedBootloaderVersion)
+                for (; ; )
                 {
-                    await ProgramBinary("Updating FUS binary...", iface, _Configuration.Bootloader, true, "Starting wireless satck finished");
+                    uint detectedFUSVersion = 0;
+
+                    for (int iter = 0; ; iter++)
+                    {
+                        try
+                        {
+                            output = await RunProgrammerTool("Checking FUS binary version...", $"-c port={iface} -r32 0x{fusVersionAddress:x8} 1");
+                            Regex rgValue = new Regex($"0x{fusVersionAddress:x8} *: *([0-9]{{8}})($| |:)");
+                            var value = output.Select(l => rgValue.Match(l)).FirstOrDefault(m => m.Success)?.Groups[1].Value ?? throw new Exception("Failed to read existing FUS binary address");
+                            detectedFUSVersion = uint.Parse(value, NumberStyles.AllowHexSpecifier, null);
+                            break;
+                        }
+                        catch when (iter < 5)
+                        {
+                            await Task.Run(() => Thread.Sleep(2000));
+                            continue;
+                        }
+                    }
+
+                    if (detectedFUSVersion == oldFUSVersion)
+                        throw new Exception($"FUS version (0x{oldFUSVersion}) has not changed after updating the FUS binary");
+
+                    var triggeredBootloader = _Configuration.Bootloaders.FirstOrDefault(b => b.ShouldProgram(detectedFUSVersion)) ?? throw new Exception($"Don't know which FUS binary to use for current version 0x{detectedFUSVersion:x8}");
+                    if (triggeredBootloader.FileName == null)
+                        break;  //This means the current bootloader is up-to-date.
+
+                    oldFUSVersion = detectedFUSVersion;
+                    await ProgramBinary($"Updating FUS binary to {triggeredBootloader.Version}...", iface, triggeredBootloader, true, "Starting wireless satck finished");
                 }
 
                 await ProgramBinary("Programming wireless stack...", iface, binary, false, "Firmware Upgrade Success");
