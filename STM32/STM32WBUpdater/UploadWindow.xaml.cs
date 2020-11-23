@@ -221,7 +221,7 @@ namespace STM32WBUpdater
 
             return lines.ToArray();
         }
-
+        
         bool OutputContains(string[] output, string marker) => output.FirstOrDefault(l => l.IndexOf(marker, StringComparison.InvariantCultureIgnoreCase) != -1) != null;
 
         async Task ProgramBinary(string title, string iface, STM32WBUpdaterConfiguration.ProgrammableBinary binary, bool isFUS, string successMarker)

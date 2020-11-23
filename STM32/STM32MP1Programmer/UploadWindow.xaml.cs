@@ -187,7 +187,7 @@ namespace STM32MP1Programmer
 
             public event PropertyChangedEventHandler PropertyChanged;
 
-            public string VersionText => $"STM32MP1 Image Programmer v1.0. Copyright (c) 2019, Sysprogs OU.";
+            public string VersionText => $"STM32MP1 Image Programmer v1.1. Copyright (c) 2019-2020, Sysprogs OU.";
 
             public bool HasNoBinaries { get; }
 
@@ -329,8 +329,21 @@ namespace STM32MP1Programmer
             if (!File.Exists(fullBinaryPath))
                 throw new Exception("Missing " + fullBinaryPath);
 
+            var binaryRef = File.ReadAllLines(fullBinaryPath).Skip(1).FirstOrDefault()?.Split('\t')?.LastOrDefault();
+            var dir = System.IO.Path.GetDirectoryName(fullBinaryPath);
+            while (!string.IsNullOrEmpty(dir))
+            {
+                var candidate = System.IO.Path.Combine(dir, binaryRef);
+                if (File.Exists(candidate))
+                    break;
+                dir = System.IO.Path.GetDirectoryName(dir);
+            }
+
+            if (dir == null)
+                dir = System.IO.Path.GetDirectoryName(System.IO.Path.GetDirectoryName(System.IO.Path.GetDirectoryName(fullBinaryPath)));
+
             fullBinaryPath = System.IO.Path.GetFullPath(fullBinaryPath);
-            var output = await RunProgrammerTool(title, $"-c port={iface} -w \"{fullBinaryPath}\"", System.IO.Path.GetDirectoryName(System.IO.Path.GetDirectoryName(fullBinaryPath)));
+            var output = await RunProgrammerTool(title, $"-c port={iface} -w \"{fullBinaryPath}\"", dir);
         }
 
         private async void Program_Click(object sender, RoutedEventArgs e)
