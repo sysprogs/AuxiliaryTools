@@ -111,6 +111,19 @@ namespace STM32WBUpdater
 
             public string[] DeviceTypes => Configuration.DeviceTypes.Split('/');
 
+            string _Filter;
+            public string Filter
+            {
+                get => _Filter;
+                set
+                {
+                    _Filter = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Filter)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CompatibleStacks)));
+                }
+            }
+
+
             int _SelectedDeviceIndex = -1;
             public int SelectedDeviceIndex
             {
@@ -123,10 +136,10 @@ namespace STM32WBUpdater
                 }
             }
 
-            public STM32WBUpdaterConfiguration.ProgrammableBinary[] CompatibleStacks => Configuration.Stacks.Where(st => SelectedDeviceIndex < 0 || st.IsCompatibleWithDevice(SelectedDeviceIndex)).ToArray();
+            public STM32WBUpdaterConfiguration.ProgrammableBinary[] CompatibleStacks => Configuration.Stacks.Where(st => (SelectedDeviceIndex < 0 || st.IsCompatibleWithDevice(SelectedDeviceIndex)) && st.MatchesFilter(_Filter)).ToArray();
 
 
-            public string VersionText => $"Wireless Stack Updater {Configuration.Version}. Copyright (c) 2019-2020, Sysprogs OU.";
+            public string VersionText => $"Wireless Stack Updater {Configuration.Version}. Copyright (c) 2019-2021, Sysprogs OU.";
 
             public ControllerImpl(STM32WBUpdaterConfiguration cfg)
             {

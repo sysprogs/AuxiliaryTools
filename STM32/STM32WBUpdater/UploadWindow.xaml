@@ -7,21 +7,37 @@
         mc:Ignorable="d"
         Title="STM32WB Wireless Stack Updater" Width="600" Icon="gear.ico"
         SizeToContent="Height" WindowStartupLocation="CenterScreen">
-    <StackPanel>
-        <TextBlock Text="Program/Update STM32WB Wireless Stack" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" Margin="0 0 0 10"/>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="Program/Update STM32WB Wireless Stack" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" Margin="0 0 0 10" Grid.Row="0"/>
         <TextBlock Text="In order to use the wireless functionality of the STM32WB device, you need to program one of the wireless stacks into it using the bootloader interface. Please select a stack below and click 'Program' load the stack into your device:" 
-                   Margin="5" TextWrapping="Wrap"/>
+                   Margin="5" TextWrapping="Wrap" Grid.Row="1"/>
 
-        <Grid Margin="5">
+        <Grid Margin="5" Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <Label Content="Device Type:" VerticalAlignment="Center"/>
             <ComboBox ItemsSource="{Binding DeviceTypes}" SelectedIndex="{Binding SelectedDeviceIndex}" Grid.Column="1" Margin="5" VerticalAlignment="Center"/>
-        </Grid>
 
-        <Grid>
+            <Label Content="Filter:" Grid.Column="2" VerticalAlignment="Center" Margin="10 0 0 0"/>
+            <TextBox Text="{Binding Filter, UpdateSourceTrigger=PropertyChanged}" Width="120" Margin="5 2" Grid.Column="3" VerticalAlignment="Center"/>
+
+        </Grid>
+        
+        <Grid Grid.Row="4">
             <ListBox ItemsSource="{Binding Path=CompatibleStacks}" Margin="5" SelectedItem="{Binding SelectedBinary}"
                      IsEnabled="{Binding IsReady}" MouseDoubleClick="ListBox_MouseDoubleClick">
                 <ListBox.ItemTemplate>
@@ -83,7 +99,7 @@
             </RichTextBox>
         </Grid>
 
-        <Grid Margin="5 2 0 2">
+        <Grid Margin="5 2 0 2" Grid.Row="5">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
@@ -133,7 +149,7 @@
             </Grid.Style>
         </Grid>
 
-        <Button Click="Program_Click">
+        <Button Click="Program_Click" Grid.Row="6">
             <Button.Style>
                 <Style TargetType="Button">
                     <Style.Triggers>
@@ -152,11 +168,11 @@
             </StackPanel>
         </Button>
 
-        <Grid>
+        <Grid Grid.Row="7">
             <Button Style="{StaticResource HyperlinkButton}" HorizontalAlignment="Left" Content="View ST license for tools and binaries"
                     Click="ShowLicense_Click" Margin="5 0 0 0"/>
             <TextBlock Text="{Binding VersionText}" HorizontalAlignment="Right" Margin="5 2"/>
         </Grid>
 
-    </StackPanel>
+    </Grid>
 </Window>

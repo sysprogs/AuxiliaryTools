@@ -37,6 +37,18 @@ namespace STM32WBUpdater
                     return false;
                 return true;
             }
+
+            public bool MatchesFilter(string filter)
+            {
+                if (string.IsNullOrEmpty(filter))
+                    return true;
+
+                foreach (var str in new[] { Line1, Line2, FileName, Version, BaseAddress })
+                    if (str != null && str.IndexOf(filter, StringComparison.InvariantCultureIgnoreCase) != -1)
+                        return true;
+
+                return false;
+            }
         }
 
         public class ProgrammableBootloader : ProgrammableBinary
