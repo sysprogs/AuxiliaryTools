@@ -73,6 +73,7 @@
       <DependentUpon>DeviceConnectionRequestWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="DeviceEnumeration\DeviceEnumerator.cs" />
+    <Compile Include="ReparsePoint.cs" />
     <Compile Include="UploadWindow.xaml.cs">
       <DependentUpon>UploadWindow.xaml</DependentUpon>
     </Compile>

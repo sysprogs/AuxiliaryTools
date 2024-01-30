@@ -9,6 +9,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -187,7 +188,7 @@ namespace STM32MP1Programmer
 
             public event PropertyChangedEventHandler PropertyChanged;
 
-            public string VersionText => $"STM32MP1 Image Programmer v1.1. Copyright (c) 2019-2020, Sysprogs OU.";
+            public string VersionText => $"STM32MP1 Image Programmer v1.2. Copyright (c) 2019-2024, Sysprogs OU.";
 
             public bool HasNoBinaries { get; }
 
@@ -205,8 +206,39 @@ namespace STM32MP1Programmer
                 }
 
                 Filter = "";
+
+                try
+                {
+                    var symlinksFile = System.IO.Path.Combine(imageDir, SymlinkRecord.ListFileName);
+                    var pendingLinks = new List<SymlinkRecord>();
+                    if (File.Exists(symlinksFile))
+                        foreach (var line in File.ReadAllLines(symlinksFile))
+                        {
+                            var rec = SymlinkRecord.Parse(line);
+                            if (!File.Exists(System.IO.Path.Combine(imageDir, rec.Source)))
+                                pendingLinks.Add(rec);
+                        }
+
+                    if (pendingLinks.Count > 0)
+                    {
+                        if (MessageBox.Show($"To reduce the SFX archive size, {pendingLinks.Count} duplicate files produced by ST scripts were not included in it.\r\nWould you like to restore them as hardlinks?", "STM32 Image Uploader", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
+                        {
+                            foreach (var rec in pendingLinks)
+                                if (!CreateHardLink(System.IO.Path.Combine(imageDir, rec.Source), System.IO.Path.Combine(imageDir, rec.Target), IntPtr.Zero))
+                                    throw new Exception("Failed to hardlink " + rec);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "STM32 Image Uploader", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        static extern bool CreateHardLink(string lpFileName, string lpExistingFileName, IntPtr lpSecurityAttributes);
+
 
         public readonly ControllerImpl Controller;
 
